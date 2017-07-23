@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="annsol">
+<head>
+    <meta charset="UTF-8">
+    <title>Ann.sol - A cryptographic announcement framework</title>
+
+    <script src="/js/1_config.js" type="application/javascript"></script>
+    <script src="/js/web3.min.js" type="application/javascript"></script>
+    <script src="/js/ann-sol.js" type="application/javascript"></script>
+    <script src="/js/ensutils-testnet.js" type="application/javascript"></script>
+    <script src="/js/angular.min.js" type="application/javascript"></script>
+    <script src="/js/ann-sol-ng.js" type="application/javascript"></script>
+</head>
+<body ng-controller="AnnSolController as annsol">
+
+<h1>Ann.sol - A cryptographic announcement framework</h1>
+
+<strong>ROPSTEN TESTNET ONLY CURRENTLY</strong>
+
+<h2>Check Announcements</h2>
+
+<form ng-submit="annsol.checkEnsDomain()">
+    <input ng-model="annsol.domain" type="text" placeholder="Enter an ENS domain or contract address" size="50">
+    <button>Go!</button>
+</form>
+
+<div ng-show="annsol.showResults">
+    <h4>Address: {{annsol.address}}</h4>
+
+    <h4 ng-show="!annsol.showAnnouncements">Loading announcements...</h4>
+    <div ng-show="annsol.showAnnouncements">
+        <h5>Total Announcements: {{annsol.nMsg}}</h5>
+        <h5>Total Announcements: {{annsol.nMsg}}</h5>
+        <h5>Total Announcements: {{annsol.nMsg}}</h5>
+        <h5>Total Announcements: {{annsol.nMsg}}</h5>
+    </div>
+</div>
+
+<h2>How does this work?</h2>
+
+<p>
+    Ideally the announcer will have an ENS domain ready to go. Ideally they'd point the domain (or a subdomain, e.g.
+    ann.cooltoken.eth) to their announcement contract.
+</p>
+
+<p>
+    The announcement contract accepts an IPFS hash (or arbitrary string, really) from the announcer (which is the owner).
+    Before that announcement goes live, though, it must be approved by some of the auditors.
+</p>
+
+<p>
+    The auditors are set at the time of the contract creation and there is some minimum number required to release an announcement.
+    The owner might set herself as the auditor (or some other accounts they control) - this is a Bad Idea (tm). Ideally
+    the auditors are reasonably well known figures in the community and their role is to verify announcements are legitimate
+    before they are published. Users should therefore be suspicious if the auditors are not publicly declared and confirmed.
+    The confirmation process can be done however they choose, such as over video chat, though they may also choose
+    a more rigorous process. The idea is that this step, even if conducted in a very low effort manner, will prevent
+    99% of bad announcements getting through. (And, of course, it doesn't necessarily prevent the $5 wrench attack, but
+    that's a topic for another day). Crucially, this is dependent on <i>people and meaning</i>, not just cryptography or
+    the security of a web server.
+</p>
+
+<p>
+    Additionally, the auditors may choose to sound an alarm instead of giving the okay for any announcement. There is also
+    a threshold for the number of alarms that must be triggered before an announcement is blacklisted.
+</p>
+
+<p>
+    If the announcement is an IPFS hash then the contents will be shown in the browser, otherwise the raw string will be shown.
+</p>
+
+<p>
+    Additionally, all config URLs are stored in js/1_config.js. If you download the repository and replace the URLs with
+    local nodes you can use this site locally.
+</p>
+
+<h3>Open Source Stuff</h3>
+
+Please see the /vendor folder for licenses.<br><br>
+
+Web3 is distributed under LGPL-3<br><br>
+
+js-ipfs-api is distributed under MIT<br><br>
+
+angularjs is distributed under MIT<br><br>
+
+ensutils is distributed under CC0-1.0<br><br>
+
+</body>
+</html>
