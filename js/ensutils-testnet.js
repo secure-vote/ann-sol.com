@@ -3,13 +3,13 @@ function namehash(name) {
     if (name !== '') {
         var labels = name.split(".");
         for(var i = labels.length - 1; i >= 0; i--) {
-            node = web3.sha3(node + web3.sha3(labels[i]).slice(2), {encoding: 'hex'});
+            node = _web3.sha3(node + _web3.sha3(labels[i]).slice(2), {encoding: 'hex'});
         }
     }
     return node.toString();
 }
 
-var ensContract = web3.eth.contract([
+var ensContract = _web3.eth.contract([
   {
     "constant": true,
     "inputs": [
@@ -212,7 +212,7 @@ var ensContract = web3.eth.contract([
 ]);
 var ens = ensContract.at('0x112234455c3a32fd11230c42e7bccd4a84e02010');
 
-var auctionRegistrarContract = web3.eth.contract([
+var auctionRegistrarContract = _web3.eth.contract([
   {
     "constant": false,
     "inputs": [
@@ -751,7 +751,7 @@ var auctionRegistrarContract = web3.eth.contract([
 ]);
 var ethRegistrar = auctionRegistrarContract.at(ens.owner(namehash('eth')));
 
-var deedContract = web3.eth.contract([
+var deedContract = _web3.eth.contract([
   {
     "constant": true,
     "inputs": [],
@@ -911,7 +911,7 @@ var deedContract = web3.eth.contract([
   }
 ]);
 
-var fifsRegistrarContract = web3.eth.contract([
+var fifsRegistrarContract = _web3.eth.contract([
   {
     "constant": true,
     "inputs": [],
@@ -989,7 +989,7 @@ var fifsRegistrarContract = web3.eth.contract([
 ]);
 var testRegistrar = fifsRegistrarContract.at(ens.owner(namehash('test')));
 
-var resolverContract = web3.eth.contract([
+var resolverContract = _web3.eth.contract([
   {
     "constant": true,
     "inputs": [
@@ -1307,7 +1307,7 @@ var resolverContract = web3.eth.contract([
 var publicResolver = resolverContract.at('0x4c641fb9bad9b60ef180c31f56051ce826d21a9a');
 
 
-var reverseRegistrarContract = web3.eth.contract([
+var reverseRegistrarContract = _web3.eth.contract([
   {
     "constant": false,
     "inputs": [

@@ -1,0 +1,22 @@
+{
+  "name": "ann-sol.com",
+  "version": "0.0.1",
+  "description": "Frontend for ann-sol.com",
+  "main": "index.js",
+  "scripts": {
+    "build": "browserify src/main.js -o js/bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/exo-one/ann-sol.com.git"
+  },
+  "author": "Max Kaye (XO.1)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/exo-one/ann-sol.com/issues"
+  },
+  "homepage": "https://github.com/exo-one/ann-sol.com#readme",
+  "dependencies": {
+    "ethereumjs-util": "^5.1.2"
+  }
+}

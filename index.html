@@ -5,86 +5,233 @@
     <title>Ann.sol - A cryptographic announcement framework</title>
 
     <script src="/js/1_config.js" type="application/javascript"></script>
+    <script src="/js/ramda.min.js" type="application/javascript"></script>
+    <script src="/js/bundle.js" type="application/javascript"></script>
     <script src="/js/web3.min.js" type="application/javascript"></script>
     <script src="/js/ann-sol.js" type="application/javascript"></script>
     <script src="/js/ensutils-testnet.js" type="application/javascript"></script>
     <script src="/js/angular.min.js" type="application/javascript"></script>
     <script src="/js/ann-sol-ng.js" type="application/javascript"></script>
+
+    <link href="css/basscss.min.css" rel="stylesheet">
+    <link href="css/ann-sol.css" rel="stylesheet">
 </head>
 <body ng-controller="AnnSolController as annsol">
 
-<h1>Ann.sol - A cryptographic announcement framework</h1>
+<div class="flex flex-column" style="min-height:100vh">
+    <header class="fixed top-0 z3 bg-silver border-bottom" style="min-height: 10vh; width: 100vw">
+        <div class="col col-11">
+            <h2 class="mt1 ml1">Ann.sol - A cryptographic announcement framework</h2>
 
-<strong>ROPSTEN TESTNET ONLY CURRENTLY</strong>
+            <strong class="ml1">ROPSTEN TESTNET ONLY CURRENTLY</strong>
 
-<h2>Check Announcements</h2>
+            <div ng-show="annsol.error" class="m1 p1 bg-red white">ERROR: {{annsol.error}}
+                <span class="right h2" ng-click="annsol.error = ''">X</span>
+            </div>
+        </div>
 
-<form ng-submit="annsol.checkEnsDomain()">
-    <input ng-model="annsol.domain" type="text" placeholder="Enter an ENS domain or contract address" size="50">
-    <button>Go!</button>
-</form>
+        <div class="col p1" ng-if="annsol.awaitingTxs.size > 0"
+             style="min-height: 100%">
+            {{annsol.awaitingTxs.size}} Txs...<br>
+            <div class="loader"></div>
+        </div>
+    </header>
 
-<div ng-show="annsol.showResults">
-    <h4>Address: {{annsol.address}}</h4>
+    <main class="container flex-auto" style="margin-top: 12vh; margin-bottom: 20vh;">
+        <div class="clearfix">
+            <div class="">
 
-    <h4 ng-show="!annsol.showAnnouncements">Loading announcements...</h4>
-    <div ng-show="annsol.showAnnouncements">
-        <h5>Total Announcements: {{annsol.nMsg}}</h5>
-        <h5>Total Announcements: {{annsol.nMsg}}</h5>
-        <h5>Total Announcements: {{annsol.nMsg}}</h5>
-        <h5>Total Announcements: {{annsol.nMsg}}</h5>
-    </div>
+                <expandable title="Announcement ENS Domain / Address" hide="annsol.showDomainSetter">
+                    <form ng-submit="annsol.showDomainSetter = !annsol.showDomainSetter; annsol.checkEnsDomain();">
+                        <input class="field" ng-model="annsol.domain" type="text"
+                               placeholder="Enter an ENS domain or contract address" size="50">
+                        <button class="btn btn-primary">Go!</button>
+                    </form>
+                </expandable>
+
+                <h2 ng-show="annsol.showLoading">Loading...</h2>
+
+                <div ng-show="annsol.showResults">
+                    <expandable title="Announcements ({{annsol.getNMsgs()}})" title-bg-class="bg-green">
+                        <ul>
+                            <li ng-repeat="msg in annsol.rawMsgs track by $index">{{msg}}</li>
+                        </ul>
+                        <h4 ng-show="annsol.getNMsgs === 0">No pending announcements.</h4>
+                    </expandable>
+
+                    <expandable title="Pending Announcements ({{annsol.getNPending()}})" hide="true" ng-show="annsol.getNPending() > 0">
+                        <ul>
+                            <li ng-repeat="(id, msg) in annsol.msgWaitingMap">{{msg}}</li>
+                        </ul>
+                        <h4 ng-show="annsol.getNPending() === 0">No pending announcements.</h4>
+                    </expandable>
+
+                    <expandable title="Alarms (Flagged Announcements) (0)" title-bg-class="bg-red" hide="true" ng-show="annsol.getNAlarms() > 0">
+
+                    </expandable>
+
+
+                    <expandable title="Contract Details">
+                        <h4>Address: {{annsol.address}}</h4>
+                        <h5>Total Announcements: {{annsol.nMsg}}</h5>
+                        <h5>Pending Announcements: {{ annsol.getNPending() }}</h5>
+                        <h5>Owner: {{annsol.owner}}</h5>
+                        <h5>Auditors: {{ annsol.auditors.join(', ') }}</h5>
+                    </expandable>
+
+                    <div ng-show="annsol.accounts.length > 0">
+                        <hr>
+
+                        <expandable title="Contract Functions">
+                            <form>
+                                <label for="annsolFrom">From:</label>
+                                <select id="annsolFrom" ng-model="annsol.fromAddr">
+                                    <option ng-repeat="addr in annsol.accounts track by $index" value="{{addr}}">
+                                        {{annsol.renderAddr(addr)}}
+                                    </option>
+                                </select>
+
+                                <div class="border m2 p2">
+                                    <h4>Create Announcement</h4>
+
+                                    <label for="newAnnString">Content (IPFS MH)</label>
+                                    <input class="field" id="newAnnString" size="50" type="text"
+                                           ng-model="annsol.newAnnString">
+                                    <button class="btn btn-primary" ng-click="annsol.sendNewAnn()">Sign and send (via
+                                        Eth
+                                        node)
+                                    </button>
+
+                                    <h4>Audit Announcement</h4>
+
+                                    <label for="nMsgWaitingI">nMsgWaiting ({{annsol.getNPending()}})</label>
+                                    <select id="nMsgWaitingI" ng-model="annsol.auditNMsgWaiting">
+                                        <option ng-repeat="(i, obj) in annsol.msgWaitingMap"
+                                                value="{{i}}">
+                                            {{obj.timestamp}} - {{obj.msg}}
+                                        </option>
+                                    </select>
+
+                                    <button class="btn btn-primary m1 block" ng-click="annsol.sendAuditGood()">
+                                        Confirm good announcement
+                                    </button>
+
+                                    <button class="btn btn-outline bg-red white m1" ng-click="annsol.sendAuditBad()">
+                                        Bad Audit! Sound the Alarm!
+                                    </button>
+
+                                </div>
+                            </form>
+                        </expandable>
+                    </div>
+                </div>
+
+                <h2>How does this work?</h2>
+
+                <p>
+                    Ideally the announcer will have an ENS domain ready to go. Ideally they'd point the domain (or a
+                    subdomain,
+                    e.g.
+                    ann.cooltoken.eth) to their announcement contract.
+                </p>
+
+                <p>
+                    The announcement contract accepts an IPFS hash (or arbitrary string, really) from the announcer
+                    (which
+                    is
+                    the owner).
+                    Before that announcement goes live, though, it must be approved by some of the auditors.
+                </p>
+
+                <p>
+                    The auditors are set at the time of the contract creation and there is some minimum number required
+                    to
+                    release an announcement.
+                    The owner might set herself as the auditor (or some other accounts they control) - this is a Bad
+                    Idea
+                    (tm).
+                    Ideally
+                    the auditors are reasonably well known figures in the community and their role is to verify
+                    announcements
+                    are legitimate
+                    before they are published. Users should therefore be suspicious if the auditors are not publicly
+                    declared
+                    and confirmed.
+                    The confirmation process can be done however they choose, such as over video chat, though they may
+                    also
+                    choose
+                    a more rigorous process. The idea is that this step, even if conducted in a very low effort manner,
+                    will
+                    prevent
+                    99% of bad announcements getting through. (And, of course, it doesn't necessarily prevent the $5
+                    wrench
+                    attack, but
+                    that's a topic for another day). Crucially, this is dependent on <i>people and meaning</i>, not just
+                    cryptography or
+                    the security of a web server.
+                </p>
+
+                <p>
+                    Additionally, the auditors may choose to sound an alarm instead of giving the okay for any
+                    announcement.
+                    There is also
+                    a threshold for the number of alarms that must be triggered before an announcement is blacklisted.
+                </p>
+
+                <p>
+                    If the announcement is an IPFS hash then the contents will be shown in the browser, otherwise the
+                    raw
+                    string
+                    will be shown.
+                </p>
+
+                <p>
+                    Additionally, all config URLs are stored in js/1_config.js. If you download the repository and
+                    replace
+                    the
+                    URLs with
+                    local nodes you can use this site locally.
+                </p>
+
+                <h3>Open Source Stuff</h3>
+
+                Please see the /vendor folder for licenses.<br><br>
+
+                Web3 is distributed under LGPL-3<br>
+
+                js-ipfs-api is distributed under MIT<br>
+
+                angularjs is distributed under MIT<br>
+
+                ensutils is distributed under CC0-1.0<br>
+
+                ramda is distributed under MIT<br>
+                basscss is distributed under MIT<br>
+
+                <h3>Config</h3>
+
+                <form ng-submit="annsol.updateWeb3()">
+                    <input class="field" type="text" size="50" ng-model="annsol.web3URL"><br>
+                    <button class="btn btn-primary" type="submit">Update</button>
+                    <button class="btn btn-outline" type="button" ng-click="annsol.setLocalhost()">Set Localhost
+                    </button>
+                </form>
+
+            </div>
+        </div>
+    </main>
+
+
+    <footer class="fixed bottom-0 bg-white z4 border-top px2 overflow-scroll" style="width: 100vw; height: 17vh">
+        <h2>Logs</h2>
+
+        <span ng-show="annsol.logs.length === 0">No logs yet.</span>
+
+        <ul ng-show="annsol.logs.length > 0">
+            <li class="h6" ng-repeat="logItem in annsol.logs track by $index">{{logItem}}</li>
+        </ul>
+    </footer>
 </div>
-
-<h2>How does this work?</h2>
-
-<p>
-    Ideally the announcer will have an ENS domain ready to go. Ideally they'd point the domain (or a subdomain, e.g.
-    ann.cooltoken.eth) to their announcement contract.
-</p>
-
-<p>
-    The announcement contract accepts an IPFS hash (or arbitrary string, really) from the announcer (which is the owner).
-    Before that announcement goes live, though, it must be approved by some of the auditors.
-</p>
-
-<p>
-    The auditors are set at the time of the contract creation and there is some minimum number required to release an announcement.
-    The owner might set herself as the auditor (or some other accounts they control) - this is a Bad Idea (tm). Ideally
-    the auditors are reasonably well known figures in the community and their role is to verify announcements are legitimate
-    before they are published. Users should therefore be suspicious if the auditors are not publicly declared and confirmed.
-    The confirmation process can be done however they choose, such as over video chat, though they may also choose
-    a more rigorous process. The idea is that this step, even if conducted in a very low effort manner, will prevent
-    99% of bad announcements getting through. (And, of course, it doesn't necessarily prevent the $5 wrench attack, but
-    that's a topic for another day). Crucially, this is dependent on <i>people and meaning</i>, not just cryptography or
-    the security of a web server.
-</p>
-
-<p>
-    Additionally, the auditors may choose to sound an alarm instead of giving the okay for any announcement. There is also
-    a threshold for the number of alarms that must be triggered before an announcement is blacklisted.
-</p>
-
-<p>
-    If the announcement is an IPFS hash then the contents will be shown in the browser, otherwise the raw string will be shown.
-</p>
-
-<p>
-    Additionally, all config URLs are stored in js/1_config.js. If you download the repository and replace the URLs with
-    local nodes you can use this site locally.
-</p>
-
-<h3>Open Source Stuff</h3>
-
-Please see the /vendor folder for licenses.<br><br>
-
-Web3 is distributed under LGPL-3<br><br>
-
-js-ipfs-api is distributed under MIT<br><br>
-
-angularjs is distributed under MIT<br><br>
-
-ensutils is distributed under CC0-1.0<br><br>
 
 </body>
 </html>

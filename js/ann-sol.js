@@ -1,11 +1,7 @@
 const Web3 = require('web3');
 
 // Checking if Web3 has been injected by the browser (Mist/MetaMask)
-if (typeof web3 !== 'undefined') {
-    window.web3 = new Web3(web3.currentProvider);
-} else {
-    window.web3 = new Web3(new Web3.providers.HttpProvider(web3URL));
-}
+_web3 = new Web3(new Web3.providers.HttpProvider(web3URL));
 
 annSolAbi = [
     {
@@ -21,6 +17,24 @@ annSolAbi = [
             {
                 "name": "",
                 "type": "bool"
+            }
+        ],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "auditorsList",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
             }
         ],
         "payable": false,
@@ -78,6 +92,19 @@ annSolAbi = [
         "constant": true,
         "inputs": [],
         "name": "nAuditorsRequired",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "nAuditors",
         "outputs": [
             {
                 "name": "",
@@ -148,6 +175,36 @@ annSolAbi = [
         "constant": true,
         "inputs": [
             {
+                "name": "msgWaitingN",
+                "type": "uint256"
+            }
+        ],
+        "name": "getMsgWaiting",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "name": "",
+                "type": "string"
+            },
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
                 "name": "",
                 "type": "uint256"
             }
@@ -211,19 +268,6 @@ annSolAbi = [
         "type": "function"
     },
     {
-        "constant": true,
-        "inputs": [],
-        "name": "test",
-        "outputs": [
-            {
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "payable": false,
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "name": "_auditors",
@@ -243,4 +287,4 @@ annSolAbi = [
     }
 ];
 
-annSolTestContract = web3.eth.contract(annSolAbi).at(annSolTestAddr);
+annSolTestContract = _web3.eth.contract(annSolAbi).at(annSolTestAddr);
