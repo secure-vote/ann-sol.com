@@ -13,6 +13,8 @@ angular.module('annsol', [])
             annsol.web3URL = web3URL;
             annsol.error = "";
             annsol.rawMsgs = [];
+            annsol.renderedMsgs = {};
+            annsol.renderedMsgsDone = {};
             annsol.rawAlerts = [];
             annsol.accounts = [];
             annsol.nMsgsWaiting = [];
@@ -24,6 +26,7 @@ angular.module('annsol', [])
             annsol.msgWaitingMap = {};
             annsol.auditNMsgWaiting = -1;
             annsol.lastUpdate = 0;
+            annsol.gasPrice = 4000000000;
 
             annsol.showAnnouncements = false;
             annsol.initDone = false;
@@ -174,9 +177,45 @@ angular.module('annsol', [])
                         annsol.handleError(err);
                     else {
                         annsol.rawMsgs.push(res);
+                        annsol.genRenderedMsg(n, res);
                         annsol.getMsgs(n - 1, false);
                     }
                 })
+            }
+
+            annsol.genRenderedMsg = (n, [mhOrString, ts]) => {
+                if (annsol.renderedMsgsDone[n])
+                    return;
+                ipfs.files.cat(mhOrString)
+                    .then(stream => {
+                        const chunks = [];
+                        stream.on('data', chunk => chunks.push(chunk));
+                        stream.on('end', () => {
+                            console.log(chunks);
+                            const renderedMsg = R.reduce((acc, c) => acc + c, '', R.map(c => c.toString(), chunks));
+                            annsol.addRenderedMsg(n, renderedMsg, ts, true);
+                        });
+                        stream.on('error', err => {
+                            log.warning("Error in IPFS stream", err);
+                        });
+                    })
+                    .catch(err => {
+                        const es = err.toString();
+                        if (!es.includes('multihash') && !es.includes('base58'))
+                            console.log(err);
+                        annsol.addRenderedMsg(n, mhOrString, ts, false);
+                    })
+            }
+
+            annsol.addRenderedMsg = (n, msg, ts, isIpfs) => {
+                annsol.renderedMsgs[n] = {msg, ts, isIpfs};
+                annsol.renderedMsgsDone[n] = true;
+            }
+
+            annsol.getRenderedMsgs = () => {
+                const keys = R.map(i => parseInt(i), R.keys(annsol.renderedMsgs));
+                keys.sort();
+                return R.map(k => annsol.renderedMsgs[k], R.reverse(keys));
             }
 
             annsol.updateWeb3 = () => {
@@ -210,16 +249,26 @@ angular.module('annsol', [])
 
             annsol.sendNewAnn = () => {
                 // todo: confirm and disable button
-                annsol.contract.addAnn(annsol.newAnnString, {from: annsol.fromAddr, gas: 120000}, (err, txid) => {
-                    if (err) {
-                        if (err.toString().contains('todo: some thing about unlocked wallet')) {
+                annsol.contract.addAnn.estimateGas(annsol.newAnnString, {from: annsol.fromAddr}, (err, gasEstimate) => {
+                    console.log(gasEstimate);
+                    const continueAnn = confirm(`Warning: about to issue new announcement from ${annsol.fromAddr} with gasEstimate: ${gasEstimate}.\n\nContent: ${annsol.newAnnString}\n\nDo you want to continue?`);
+                    if (!continueAnn)
+                        return;
+                    annsol.contract.addAnn(annsol.newAnnString, {
+                        from: annsol.fromAddr,
+                        gas: Math.round(gasEstimate * 1.1),
+                        gasPrice: annsol.gasPrice,
+                    }, (err, txid) => {
+                        if (err) {
+                            if (err.toString().includes('todo: some thing about unlocked wallet')) {
 
+                            }
+                            annsol.handleError(err);
+                        } else {
+                            annsol.addTx(txid);
                         }
-                        annsol.handleError(err);
-                    } else {
-                        annsol.addTx(txid);
-                    }
-                    annsol.uiPing();
+                        annsol.uiPing();
+                    })
                 })
             };
 
@@ -233,11 +282,14 @@ angular.module('annsol', [])
 
             annsol._sendAudit = (isGood) => {
                 annsol.contract.addAudit.estimateGas(annsol.auditNMsgWaiting, isGood, {from: annsol.fromAddr}, (err, gasEstimate) => {
-                    console.log(`gasestimate: ${gasEstimate}, ${Math.round(gasEstimate * 1.1)}`)
+                    console.log(`gasestimate: ${gasEstimate}, ${Math.round(gasEstimate * 1.1)}`);
+                    const continueAudit = confirm(`Warning: about to audit result (message okay: ${isGood}) from ${annsol.fromAddr} with gasEstimate: ${gasEstimate}.\n\nDo you want to continue?`);
+                    if (!continueAudit)
+                        return;
                     annsol.contract.addAudit(annsol.auditNMsgWaiting, isGood, {
                         from: annsol.fromAddr,
                         gas: Math.round(gasEstimate * 1.1),
-                        gasPrice: 40000000000,
+                        gasPrice: annsol.gasPrice,
                     }, (err, txid) => {
                         if (err)
                             return annsol.handleError(err)
@@ -249,7 +301,7 @@ angular.module('annsol', [])
 
             annsol.addTx = (txid) => {
                 annsol.awaitingTxs.add(txid);
-                annsol.log(`New Announcement txid: ${txid}`);
+                annsol.log(`New txid: ${txid}`);
                 annsol.uiPing();
             }
 
@@ -257,10 +309,18 @@ angular.module('annsol', [])
                 return addr + (addr === annsol.owner ? " (Owner)" : "") + (annsol.auditors.includes(addr) ? " (Auditor)" : "");
             }
 
+            annsol.renderTs = (ts) => {
+                return moment.unix(ts).format()
+            }
+
+            annsol.isOwner = (addr) => addr === annsol.owner;
+            annsol.isAuditor = addr => annsol.auditors.includes(addr);
+
 
             if (__DEV__) {  // do this before setting filter
                 annsol.setLocalhost();
                 annsol.checkEnsDomain();
+                annsol.gasPrice = 40000000000;
             }
 
             _web3.eth.filter('latest', (err, blockHash) => {
@@ -290,12 +350,33 @@ angular.module('annsol', [])
         bindings: {
             title: '@',
             hide: '=',
+            small: '=',
             titleBgClass: '@',
         },
-        restrict : 'EA',
-        controller: function($attrs, $scope) {
+        restrict: 'EA',
+        controller: function ($attrs, $scope) {
             if (!$attrs.titleBgClass)
                 $attrs.titleBgClass = "bg-blue";
+            if (!$attrs.small)
+                $attrs.small = false;
+
+            this.titleC = () => {
+                if (this.small)
+                    return ['h4', 'm0'];
+                return [];
+            }
+
+            this.titleBoxC = () => {
+                if (this.small)
+                    return ['p1', this.titleBgClass];
+                return ['p2', this.titleBgClass]
+            }
+
+            this.buttonC = () => {
+                if (this.small)
+                    return ['h6', 'p1', 'm0'];
+                return [];
+            }
         },
         controllerAs: 'ctrl',
         transclude: true,

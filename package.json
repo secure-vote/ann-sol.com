@@ -18,6 +18,7 @@
   "homepage": "https://github.com/exo-one/ann-sol.com#readme",
   "dependencies": {
     "browserify": "^14.4.0",
-    "ethereumjs-util": "^5.1.2"
+    "ethereumjs-util": "^5.1.2",
+    "ipfs-api": "^14.1.0"
   }
 }

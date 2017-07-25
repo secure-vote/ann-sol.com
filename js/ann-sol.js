@@ -288,3 +288,5 @@ annSolAbi = [
 ];
 
 annSolTestContract = _web3.eth.contract(annSolAbi).at(annSolTestAddr);
+
+const ipfs = ipfsApi();
