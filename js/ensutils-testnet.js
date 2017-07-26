@@ -1387,13 +1387,14 @@ var reverseRegistrarContract = _web3.eth.contract([
 ]);
 var reverseRegistrar = reverseRegistrarContract.at(ens.owner(namehash('addr.reverse')));
 
-function getAddr(name) {
-  var node = namehash(name)
-  var resolverAddress = ens.resolver(node);
-  if (resolverAddress === '0x0000000000000000000000000000000000000000') {
-    return resolverAddress;
-  }
-  return resolverContract.at(resolverAddress).addr(node);
+function getAddr(name, cb) {
+  var node = namehash(name);
+  ens.resolver(node, (err, resolverAddress) => {
+      if (resolverAddress === '0x0000000000000000000000000000000000000000') {
+          return cb(null, resolverAddress);
+      }
+      return resolverContract.at(resolverAddress).addr(node, cb);
+  });
 }
 
 function getContent(name) {

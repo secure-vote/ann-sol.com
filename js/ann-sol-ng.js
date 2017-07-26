@@ -1,4 +1,4 @@
-__DEV__ = true;
+__DEV__ = false;
 
 angular.module('annsol', [])
     .controller('AnnSolController', function ($scope) {
@@ -29,6 +29,7 @@ angular.module('annsol', [])
             annsol.auditNMsgWaiting = -1;
             annsol.lastUpdate = 0;
             annsol.gasPrice = 4000000000;
+            annsol.testnet = false;
 
             annsol.showAnnouncements = false;
             annsol.initDone = false;
@@ -52,7 +53,7 @@ angular.module('annsol', [])
             }
 
             annsol.getAddr = (name, cb) => {
-                cb(null, getAddr(name));
+                getAddr(name, cb);
             }
 
             annsol.checkEnsDomain = () => {
