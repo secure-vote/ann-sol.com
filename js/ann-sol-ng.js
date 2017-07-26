@@ -7,29 +7,33 @@ angular.module('annsol', [])
             $scope.R = R;
 
             annsol.showResults = false;
-            annsol.domain = "testann.test";
+            annsol.domain = "0xbf74cC2839b4B639062E37b6Ea53F3ed7964132c";
             annsol.fromAddr = '';
-            annsol.address = "";
             annsol.web3URL = web3URL;
             annsol.ipfsURL = R.clone(ipfsURL);
             annsol.error = "";
-            annsol.rawMsgs = [];
-            annsol.renderedMsgs = {};
-            annsol.renderedMsgsDone = {};
-            annsol.rawAlerts = [];
             annsol.accounts = [];
-            annsol.nMsgsWaiting = [];
-            annsol.newAnnString = '';
             annsol.logs = [];
-            annsol.owner = '';
-            annsol.auditors = [];
             annsol.awaitingTxs = new Set();
-            annsol.msgWaitingMap = {};
-            annsol.msgAlarmsMap = {};
-            annsol.auditNMsgWaiting = -1;
-            annsol.lastUpdate = 0;
+            annsol.testnet = false;
             annsol.gasPrice = 4000000000;
-            annsol.testnet = true;
+            annsol.lastUpdate = 0;
+
+            annsol.resetState = () => {
+                annsol.address = "";
+                annsol.rawMsgs = [];
+                annsol.renderedMsgs = {};
+                annsol.renderedMsgsDone = {};
+                annsol.rawAlerts = [];
+                annsol.nMsgsWaiting = [];
+                annsol.newAnnString = '';
+                annsol.owner = '';
+                annsol.auditors = [];
+                annsol.msgWaitingMap = {};
+                annsol.msgAlarmsMap = {};
+                annsol.auditNMsgWaiting = -1;
+            }
+            annsol.resetState();
 
             annsol.showAnnouncements = false;
             annsol.initDone = false;
@@ -72,6 +76,7 @@ angular.module('annsol', [])
             annsol.checkEnsDomain = () => {
                 annsol.showLoading = true;
                 annsol.showResults = false;
+                annsol.resetState();
 
                 const cb = (err, addr) => {
                     if (err)
@@ -151,6 +156,7 @@ angular.module('annsol', [])
                         annsol.handleError(err)
                     } else {
                         annsol.nMsgsWaiting = res.c[0];
+                        annsol.msgAlarmsMap = {};
                         annsol.msgWaitingMap = {};
                         for (let i = 0; i < annsol.nMsgsWaiting; i++) {
                             annsol.contract.getMsgWaiting(i, (err, res) => {
@@ -222,7 +228,8 @@ angular.module('annsol', [])
                         stream.on('end', () => {
                             console.log(chunks);
                             const renderedMsg = R.reduce((acc, c) => acc + c, '', R.map(c => c.toString(), chunks));
-                            annsol.addRenderedMsg(n, renderedMsg, ts, true);
+                            annsol.addRenderedMsg(n, renderedMsg, ts, true, mhOrString);
+                            annsol.uiPing();
                         });
                         stream.on('error', err => {
                             log.warning("Error in IPFS stream", err);
@@ -234,11 +241,14 @@ angular.module('annsol', [])
                         if (!es.includes('multihash') && !es.includes('base58'))
                             console.log(err);
                         annsol.addRenderedMsg(n, mhOrString, ts, false);
+                        annsol.uiPing();
                     })
             }
 
-            annsol.addRenderedMsg = (n, msg, ts, isIpfs) => {
-                annsol.renderedMsgs[n] = {msg, ts, isIpfs};
+            annsol.addRenderedMsg = (n, msg, ts, isIpfs, rawMsg = null) => {
+                if (rawMsg === null)
+                    rawMsg = msg;
+                annsol.renderedMsgs[n] = {msg, ts, isIpfs, rawMsg};
                 annsol.renderedMsgsDone[n] = true;
             }
 

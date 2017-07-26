@@ -15,3 +15,7 @@
 .my-element.ng-hide-add, .my-element.ng-hide-remove {
     transition: all 0.5s linear;
 }
+
+pre {
+    white-space: pre-wrap;
+}

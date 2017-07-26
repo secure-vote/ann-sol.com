@@ -42,7 +42,8 @@
             </div>
 
             <div class="flex">
-                <a class="btn btn-outline m2" href="https://github.com/exo-one/ann-sol.com" target="_blank">Source Code</a>
+                <a class="btn btn-outline m2" href="https://github.com/exo-one/ann-sol.com" target="_blank">Source
+                    Code</a>
             </div>
 
             <div class="flex">
@@ -161,7 +162,8 @@
 
                     <p>
                         Finally: <strong>If you use a node with unlocked accounts this page will allow you to publish
-                        new announcements or audit announcements provided the account has the right permissions.</strong>
+                        new announcements or audit announcements provided the account has the right
+                        permissions.</strong>
                     </p>
 
                     <h3>Open Source Stuff</h3>
@@ -179,13 +181,21 @@
 
                 <expandable title="Announcement ENS Domain / Address" hide="annsol.showDomainSetter">
                     <p>
-                        Enter an ENS domain here supporting the Ann.sol interface to begin:
+                        Enter an ENS domain (or a raw address) here supporting the Ann.sol interface to begin:
                     </p>
                     <form ng-submit="annsol.showDomainSetter = !annsol.showDomainSetter; annsol.checkEnsDomain();">
                         <input class="field" ng-model="annsol.domain" type="text"
                                placeholder="Enter an ENS domain or contract address" size="50">
                         <button class="btn btn-primary">Go!</button>
                     </form>
+
+                    <ul>
+                        <li>Examples:</li>
+                        <li>testann.test (Ropsten)</li>
+                        <li>0x88505b6BCe01ad9efA39AF57d3466739b3b04A12 (Ropsten)</li>
+                        <li>0xFDB130F24Cd1A5A6dF0010fff3C385E2Eb710f10 (Ropsten)</li>
+                        <li>0xbf74cC2839b4B639062E37b6Ea53F3ed7964132c (Mainnet)</li>
+                    </ul>
                 </expandable>
 
                 <h2 ng-show="annsol.showLoading">Loading...</h2>
@@ -201,7 +211,7 @@
                         >
                             <h4>Content</h4>
                             <pre class="border p1 m1 rounded">{{annObj.msg}}</pre>
-                            <span ng-if="annObj.isIpfs">Hosted via IPFS</span>
+                            <span ng-if="annObj.isIpfs">Hosted via IPFS ({{annObj.rawMsg}})</span>
                             <span ng-if="!annObj.isIpfs">Raw String in Blockchain</span>
                         </expandable>
                         <h4 ng-show="annsol.getNMsgs === 0">No announcements.</h4>
@@ -309,7 +319,9 @@
                                         <label for="nAlarmsI">nAlarms required:</label>
                                         <input id="nAlarmsI" type="number" value="2"
                                                ng-model="annsol.newAnnSol.nAlarms">
-                                        <button class="btn btn-primary" ng-click="annsol.createNewInstance()">Create New Ann.sol Instance</button>
+                                        <button class="btn btn-primary" ng-click="annsol.createNewInstance()">Create New
+                                            Ann.sol Instance
+                                        </button>
                                     </div>
 
                                 </div>
