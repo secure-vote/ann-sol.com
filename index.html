@@ -20,31 +20,52 @@
 <body ng-controller="AnnSolController as annsol">
 
 <div class="flex flex-column" style="min-height:100vh">
-    <header class="fixed top-0 z3 bg-silver border-bottom" style="min-height: 10vh; width: 100vw">
-        <div class="col col-11 px2">
-            <h2 class="mt1 ml1">Ann.sol - A cryptographic announcement framework</h2>
+    <header class="fixed top-0 z3 bg-silver border-bottom" style="height: 4.5rem; width: 100vw" id="header">
+        <div class="flex flex-justify flex-start flex-stretch">
+            <div class="flex flex-auto">
+                <h2 class="m2">Ann.sol</h2>
+            </div>
 
-            <strong class="ml1">ROPSTEN TESTNET ONLY CURRENTLY</strong>
+            <div class="ml2 right-align mt2 flex-auto">
+                <div ng-show="showLogs" class="rounded p2 bg-white border overflow-scroll" style="max-height: 30vh;">
+                    <span ng-show="annsol.logs.length === 0">No logs yet.</span>
 
-            <div ng-show="annsol.error" class="m1 p1 bg-red white">ERROR: {{annsol.error}}
-                <span class="right h2" ng-click="annsol.error = ''">X</span>
+                    <ul ng-show="annsol.logs.length > 0">
+                        <li class="h6" ng-repeat="logItem in annsol.logs track by $index">{{logItem}}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex">
+                <button class="btn btn-primary m2" ng-click="showLogs = !showLogs">Show/Hide Logs</button>
+            </div>
+
+            <div class="border-left px2 flex"
+                 ng-if="annsol.awaitingTxs.size > 0"
+                 style="min-height: 4.5rem">
+                <div class="">
+                    <div class="block mx-auto">{{annsol.awaitingTxs.size}} Txs...</div>
+                    <div class="loader mx-auto block"></div>
+                </div>
             </div>
         </div>
-
-        <div class="col p1" ng-if="annsol.awaitingTxs.size > 0"
-             style="min-height: 100%">
-            {{annsol.awaitingTxs.size}} Txs...<br>
-            <div class="loader"></div>
+        <div class="bg-red flex-auto" ng-show="annsol.error">
+            <div class="h2 border-right p1 inline-block" ng-click="annsol.error = ''" style="cursor: pointer;">&times;
+            </div>
+            <div class="p1 bg-red white inline-block">
+                (Error) {{annsol.error}}
+            </div>
         </div>
     </header>
 
-    <main class="container flex-auto" style="margin-top: 12vh; margin-bottom: 20vh;">
-        <div class="clearfix">
+    <main class="container flex-auto mx-auto" style="max-width: 1100px; margin-top: 5rem;">
+        <div class="clearfix flex flex-center">
             <div class="">
 
                 <expandable title="What is Ann.sol?" small="true" hide="true">
                     <p>
-                        Ann.sol is a full solution for distributing announcements cryptographically. It allows operators
+                        Ann.sol is a full solution for distributing announcements cryptographically. It allows
+                        maintainers
                         of token sales and DAOs to securely issue updates via a centralised, accessibly source.
                     </p>
 
@@ -84,7 +105,8 @@
                         before they are published. Users should therefore be suspicious if the auditors are not publicly
                         declared
                         and confirmed.
-                        The confirmation process can be done however they choose, such as over video chat, though they
+                        The verification process for the announcement can be done however they choose,
+                        such as over video chat, though they
                         may
                         also
                         choose
@@ -139,6 +161,9 @@
                 </expandable>
 
                 <expandable title="Announcement ENS Domain / Address" hide="annsol.showDomainSetter">
+                    <p>
+                        Enter an ENS domain here supporting the Ann.sol interface to begin:
+                    </p>
                     <form ng-submit="annsol.showDomainSetter = !annsol.showDomainSetter; annsol.checkEnsDomain();">
                         <input class="field" ng-model="annsol.domain" type="text"
                                placeholder="Enter an ENS domain or contract address" size="50">
@@ -157,7 +182,8 @@
                                 title-bg-class="bg-olive"
                                 hide="$first ? false : true"
                         >
-                            <pre class="border p1 m0 rounded">{{annObj.msg}}</pre>
+                            <h4>Content</h4>
+                            <pre class="border p1 m1 rounded">{{annObj.msg}}</pre>
                             <span ng-if="annObj.isIpfs">Hosted via IPFS</span>
                             <span ng-if="!annObj.isIpfs">Raw String in Blockchain</span>
                         </expandable>
@@ -166,15 +192,33 @@
 
                     <expandable title="Pending Announcements ({{annsol.getNPending()}})" hide="true"
                                 ng-show="annsol.getNPending() > 0">
-                        <ul>
-                            <li ng-repeat="(id, msg) in annsol.msgWaitingMap">{{msg}}</li>
-                        </ul>
+                        <expandable
+                                ng-repeat="annObj in annsol.getPendingMsgs() track by $index"
+                                title="Date: {{annsol.renderTs(annObj.timestamp)}}, Audits: {{annObj.nAudits}}, Alarms: {{annObj.nAlarms}}"
+                                small="true"
+                                title-bg-class="bg-navy"
+                                hide="$first ? false : true"
+                        >
+                            <h4>Content</h4>
+                            <pre class="border p1 m1 rounded">{{annObj.msg}}</pre>
+                        </expandable>
                         <h4 ng-show="annsol.getNPending() === 0">No pending announcements.</h4>
                     </expandable>
 
-                    <expandable title="Alarms (Flagged Announcements) (0)" title-bg-class="bg-red" hide="true"
+                    <expandable title="Alarms (Flagged Announcements) ({{annsol.getNAlarms()}})" title-bg-class="bg-red"
+                                hide="true"
                                 ng-show="annsol.getNAlarms() > 0">
-
+                        <expandable
+                                ng-repeat="annObj in annsol.getAlarmedMsgs() track by $index"
+                                title="Date: {{annsol.renderTs(annObj.timestamp)}}, Audits: {{annObj.nAudits}}, Alarms: {{annObj.nAlarms}}"
+                                small="true"
+                                title-bg-class="bg-maroon"
+                                hide="$first ? false : true"
+                        >
+                            <h4>Content</h4>
+                            <pre class="border p1 m1 rounded">{{annObj.msg}}</pre>
+                        </expandable>
+                        <h4 ng-show="annsol.getNPending() === 0">No pending announcements.</h4>
                     </expandable>
 
 
@@ -232,35 +276,55 @@
                                         </button>
                                     </div>
 
+                                    <div ng-show="false">
+                                        <h4>Create new Ann.sol contract.</h4>
+                                        <p>
+                                            This will create a new Ann.sol instance owned by {{annsol.fromAddr}}.
+                                            Please put ALL auditor addresses in below, separated by commas.
+                                        </p>
+                                        <label for="auditorsInput">Auditors:</label>
+                                        <input id="auditorsInput" placeholder="e.g. 0x123...456,0xabc...def"
+                                               ng-model="annsol.newAnnSol.auditors">
+                                        <label for="nAuditorsI">nAudits required:</label>
+                                        <input id="nAuditorsI" type="number" value="2"
+                                               ng-model="annsol.newAnnSol.nAudits">
+                                        <label for="nAlarmsI">nAlarms required:</label>
+                                        <input id="nAlarmsI" type="number" value="2"
+                                               ng-model="annsol.newAnnSol.nAlarms">
+                                        <button class="btn btn-primary" ng-click="annsol.createNewInstance()">Create New Ann.sol Instance</button>
+                                    </div>
+
                                 </div>
                             </form>
                         </expandable>
                     </div>
                 </div>
 
-                <h3>Config</h3>
+                <expandable title="Config" hide="true">
 
-                <form ng-submit="annsol.updateWeb3()">
-                    <input class="field" type="text" size="50" ng-model="annsol.web3URL"><br>
-                    <button class="btn btn-primary" type="submit">Update</button>
-                    <button class="btn btn-outline" type="button" ng-click="annsol.setLocalhost()">Set Localhost
-                    </button>
-                </form>
+                    <h4 class="p0 mt2">Web3 URL:</h4>
+                    <form ng-submit="annsol.updateWeb3()">
+                        <input class="field" type="text" size="50" ng-model="annsol.web3URL"><br>
+                        <button class="btn btn-primary" type="submit">Update</button>
+                        <button class="btn btn-outline" type="button" ng-click="annsol.setLocalhostWeb3()">Set Localhost
+                        </button>
+                    </form>
+
+                    <h4 class="p0 mt2">IPFS URL:</h4>
+                    <form ng-submit="annsol.updateIpfs()">
+                        <input class="field" type="text" size="30" ng-model="annsol.ipfsURL.host"><br>
+                        <input class="field" type="text" size="10" ng-model="annsol.ipfsURL.port"><br>
+                        <input class="field" type="text" size="10" ng-model="annsol.ipfsURL.protocol"><br>
+                        <button class="btn btn-primary" type="submit">Update</button>
+                        <button class="btn btn-outline" type="button" ng-click="annsol.setLocalhostIpfs()">Set Localhost
+                        </button>
+                    </form>
+
+                </expandable>
 
             </div>
         </div>
     </main>
-
-
-    <footer class="fixed bottom-0 bg-white z4 border-top px2 overflow-scroll" style="width: 100vw; height: 17vh">
-        <h2>Logs</h2>
-
-        <span ng-show="annsol.logs.length === 0">No logs yet.</span>
-
-        <ul ng-show="annsol.logs.length > 0">
-            <li class="h6" ng-repeat="logItem in annsol.logs track by $index">{{logItem}}</li>
-        </ul>
-    </footer>
 </div>
 
 </body>

@@ -11,6 +11,7 @@ angular.module('annsol', [])
             annsol.fromAddr = '';
             annsol.address = "";
             annsol.web3URL = web3URL;
+            annsol.ipfsURL = R.clone(ipfsURL);
             annsol.error = "";
             annsol.rawMsgs = [];
             annsol.renderedMsgs = {};
@@ -24,6 +25,7 @@ angular.module('annsol', [])
             annsol.auditors = [];
             annsol.awaitingTxs = new Set();
             annsol.msgWaitingMap = {};
+            annsol.msgAlarmsMap = {};
             annsol.auditNMsgWaiting = -1;
             annsol.lastUpdate = 0;
             annsol.gasPrice = 4000000000;
@@ -77,10 +79,9 @@ angular.module('annsol', [])
             }
 
             annsol.getAll = () => {
-                annsol.getAnns();
                 annsol.getOwner();
                 annsol.getAuditors();
-                annsol.updateMsgsWaiting();
+                annsol.update();
             }
 
             annsol.update = () => {
@@ -141,12 +142,17 @@ angular.module('annsol', [])
                             annsol.contract.getMsgWaiting(i, (err, res) => {
                                 if (err)
                                     return annsol.handleError(err)
-                                const [{c: [nAudits]}, {c: [nAlarms]}, msg, {c: [timestamp]}] = res;
-                                if (timestamp !== 0) {  // ie it's not done
-                                    annsol.msgWaitingMap[i] = {nAudits, nAlarms, msg, timestamp};
-                                    console.log(annsol.msgWaitingMap[i])
-                                    annsol.uiPing();
+                                const [{c: [nAudits]}, {c: [nAlarms]}, msg, {c: [timestamp]}, alarmed] = res;
+                                if (timestamp === 0) {  // means this doc has been deleted from msgsWaiting
+                                    return;
                                 }
+                                const msgDoc = {nAudits, nAlarms, msg, timestamp};
+                                if (alarmed) {
+                                    annsol.msgAlarmsMap[i] = msgDoc;
+                                } else {
+                                    annsol.msgWaitingMap[i] = msgDoc;
+                                }
+                                annsol.uiPing();
                             })
                         }
                     }
@@ -157,8 +163,16 @@ angular.module('annsol', [])
                 return R.keys(annsol.msgWaitingMap).length;
             }
 
+            annsol.getPendingMsgs = () => annsol.getSortedListOfElementsFrom(annsol.msgWaitingMap);
+            annsol.getAlarmedMsgs = () => annsol.getSortedListOfElementsFrom(annsol.msgAlarmsMap);
+
+            annsol.getSortedListOfElementsFrom = (dict) => {
+                const keys = R.sort((a,b) => b-a, R.map(i => parseInt(i), R.keys(dict)));
+                return R.map(k => dict[k], keys);
+            }
+
             annsol.getNAlarms = () => {
-                return annsol.rawAlerts.length;
+                return R.keys(annsol.msgAlarmsMap).length;
             }
 
             annsol.getNMsgs = () => {
@@ -186,7 +200,8 @@ angular.module('annsol', [])
             annsol.genRenderedMsg = (n, [mhOrString, ts]) => {
                 if (annsol.renderedMsgsDone[n])
                     return;
-                ipfs.files.cat(mhOrString)
+                annsol.addRenderedMsg(n, mhOrString, ts, false);
+                ipfsClient.files.cat(mhOrString)
                     .then(stream => {
                         const chunks = [];
                         stream.on('data', chunk => chunks.push(chunk));
@@ -201,6 +216,7 @@ angular.module('annsol', [])
                     })
                     .catch(err => {
                         const es = err.toString();
+                        console.log(es);
                         if (!es.includes('multihash') && !es.includes('base58'))
                             console.log(err);
                         annsol.addRenderedMsg(n, mhOrString, ts, false);
@@ -233,14 +249,30 @@ angular.module('annsol', [])
 
                         if (annsol.accounts.length > 0)
                             annsol.fromAddr = annsol.accounts[0];
+
+                        annsol.uiPing()
                     }
                 })
             }
 
+            annsol.updateIpfs = () => {
+                ipfsClient = ipfsApi(annsol.ipfsURL);
+            }
+
             annsol.setLocalhost = () => {
+                annsol.setLocalhostIpfs();
+                annsol.setLocalhostWeb3();
+            };
+
+            annsol.setLocalhostWeb3 = () => {
                 annsol.web3URL = "http://localhost:8545/";
                 annsol.updateWeb3();
-            };
+            }
+
+            annsol.setLocalhostIpfs = () => {
+                annsol.ipfsURL = {host: 'localhost', port: '5001', protocol: 'http'};
+                annsol.updateIpfs();
+            }
 
             annsol.genContract = () => {
                 annsol.contract = _web3.eth.contract(annSolAbi).at(annsol.address);
@@ -313,6 +345,15 @@ angular.module('annsol', [])
                 return moment.unix(ts).format()
             }
 
+            annsol.calcHeaderHeight = (addABit = false) => {
+                let hh = document.getElementById("header").getBoundingClientRect().height;
+                if (addABit)
+                    hh = Math.round(hh * 1.1);
+
+                console.log(hh)
+                return hh;
+            }
+
             annsol.isOwner = (addr) => addr === annsol.owner;
             annsol.isAuditor = addr => annsol.auditors.includes(addr);
 
@@ -323,11 +364,17 @@ angular.module('annsol', [])
                 annsol.gasPrice = 40000000000;
             }
 
-            _web3.eth.filter('latest', (err, blockHash) => {
-                if (err)
-                    return annsol.handleError(err);
+            setInterval(() => {
                 if (annsol.initDone) {
-                    annsol.update();
+                    _web3.eth.getBlock('lastest', (err, block) => {
+                        if (err)
+                            return annsol.handleError(err)
+                        if (block && annsol.lastBlock !== block.hash) {
+                            annsol.lastBlock = block.hash;
+                            annsol.update();
+                        }
+                        console.log(block);
+                    });
                     [...annsol.awaitingTxs].map(txid => _web3.eth.getTransaction(txid, (err, txr) => {
                         console.log(txid, err, txr);
                         if (err)
@@ -335,11 +382,12 @@ angular.module('annsol', [])
                         if (txr && txr.blockNumber) {
                             annsol.awaitingTxs.delete(txid);
                             annsol.log(`Confirmed ${txid}`);
+                            annsol.update();
                             annsol.uiPing();
                         }
                     }))
                 }
-            });
+            }, 10 * 1000);  // check every 10s
 
             // awful hack to update UI after callbacks change state
             // setInterval(() => { try { $scope.$apply() } catch (err) { /*pass*/ } }, 1000);
