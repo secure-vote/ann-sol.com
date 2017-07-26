@@ -262,6 +262,8 @@ angular.module('annsol', [])
                 annsol.log(`Set web3 provider to ${annsol.web3URL}`);
                 _web3 = new Web3(new Web3.providers.HttpProvider(annsol.web3URL));
                 annsol.genContract();
+                setEnsTestnet();
+                setEnsMainnet();
 
                 _web3.eth.getAccounts((err, res) => {
                     if (err)
