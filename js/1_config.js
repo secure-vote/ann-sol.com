@@ -1,3 +1,4 @@
-web3URL = "https://ropsten.infura.io/";
-annSolTestAddr = "0x059cdbbe450d48e0e0777e2b0d882dd6259cb03a";
+web3TestnetURL = "https://ropsten.infura.io/";
+web3MainnetURL = "https://mainnet.infura.io/";
+web3URL = web3TestnetURL;
 ipfsURL = {host: 'ipfs.infura.io', port: '5001', protocol: 'https'};

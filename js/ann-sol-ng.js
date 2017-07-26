@@ -29,7 +29,7 @@ angular.module('annsol', [])
             annsol.auditNMsgWaiting = -1;
             annsol.lastUpdate = 0;
             annsol.gasPrice = 4000000000;
-            annsol.testnet = false;
+            annsol.testnet = true;
 
             annsol.showAnnouncements = false;
             annsol.initDone = false;
@@ -52,8 +52,21 @@ angular.module('annsol', [])
                 annsol.uiPing();
             }
 
+            annsol.swapTestnet = () => {
+                if (annsol.testnet) {
+                    annsol.setMainnetWeb3();
+                    annsol.testnet = false;
+                } else {
+                    annsol.setTestnetWeb3();
+                    annsol.testnet = true;
+                }
+            }
+
             annsol.getAddr = (name, cb) => {
-                getAddr(name, cb);
+                if (annsol.testnet)
+                    getAddrTestnet(name, cb);
+                else
+                    getAddr(name, cb);
             }
 
             annsol.checkEnsDomain = () => {
@@ -168,7 +181,7 @@ angular.module('annsol', [])
             annsol.getAlarmedMsgs = () => annsol.getSortedListOfElementsFrom(annsol.msgAlarmsMap);
 
             annsol.getSortedListOfElementsFrom = (dict) => {
-                const keys = R.sort((a,b) => b-a, R.map(i => parseInt(i), R.keys(dict)));
+                const keys = R.sort((a, b) => b - a, R.map(i => parseInt(i), R.keys(dict)));
                 return R.map(k => dict[k], keys);
             }
 
@@ -267,6 +280,16 @@ angular.module('annsol', [])
 
             annsol.setLocalhostWeb3 = () => {
                 annsol.web3URL = "http://localhost:8545/";
+                annsol.updateWeb3();
+            }
+
+            annsol.setTestnetWeb3 = () => {
+                annsol.web3URL = web3TestnetURL;
+                annsol.updateWeb3();
+            }
+
+            annsol.setMainnetWeb3 = () => {
+                annsol.web3URL = web3MainnetURL;
                 annsol.updateWeb3();
             }
 

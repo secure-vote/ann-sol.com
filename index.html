@@ -11,6 +11,7 @@
     <script src="/js/web3.min.js" type="application/javascript"></script>
     <script src="/js/ann-sol.js" type="application/javascript"></script>
     <script src="/js/ensutils-testnet.js" type="application/javascript"></script>
+    <script src="/js/ensutils.js" type="application/javascript"></script>
     <script src="/js/angular.min.js" type="application/javascript"></script>
     <script src="/js/ann-sol-ng.js" type="application/javascript"></script>
 
@@ -42,6 +43,13 @@
 
             <div class="flex">
                 <a class="btn btn-outline m2" href="https://github.com/exo-one/ann-sol.com" target="_blank">Source Code</a>
+            </div>
+
+            <div class="flex">
+                <button class="btn btn-outline m2" ng-click="annsol.swapTestnet()">
+                    <span ng-show="annsol.testnet">Ropsten</span>
+                    <span ng-show="!annsol.testnet">Mainnet</span>
+                </button>
             </div>
 
             <div class="border-left px2 flex"
