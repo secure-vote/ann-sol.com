@@ -226,6 +226,7 @@
                         <h4>Address: {{annsol.address}}</h4>
                         <h5>Total Announcements: {{annsol.nMsg}}</h5>
                         <h5>Pending Announcements: {{ annsol.getNPending() }}</h5>
+                        <h5>Alarmed Announcements: {{ annsol.getNAlarms() }}</h5>
                         <h5>Owner: {{annsol.owner}}</h5>
                         <h5>Auditors: {{ annsol.auditors.join(', ') }}</h5>
                     </expandable>
