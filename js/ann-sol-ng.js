@@ -18,6 +18,7 @@ angular.module('annsol', [])
             annsol.testnet = false;
             annsol.gasPrice = 4000000000;
             annsol.lastUpdate = 0;
+            annsol.gasMultiply = 1.5;  // testnet RPC seems to require more than 1.1, unsure why.
 
             annsol.resetState = () => {
                 annsol.address = "";
@@ -318,13 +319,13 @@ angular.module('annsol', [])
             annsol.sendNewAnn = () => {
                 // todo: confirm and disable button
                 annsol.contract.addAnn.estimateGas(annsol.newAnnString, {from: annsol.fromAddr}, (err, gasEstimate) => {
-                    console.log(gasEstimate);
+                    console.log('estimate:', gasEstimate, '- sending:', gasEstimate * annsol.gasMultiply);
                     const continueAnn = confirm(`Warning: about to issue new announcement from ${annsol.fromAddr} with gasEstimate: ${gasEstimate}.\n\nContent: ${annsol.newAnnString}\n\nDo you want to continue?`);
                     if (!continueAnn)
                         return;
                     annsol.contract.addAnn(annsol.newAnnString, {
                         from: annsol.fromAddr,
-                        gas: Math.round(gasEstimate * 1.1),
+                        gas: Math.round(gasEstimate * annsol.gasMultiply),
                         gasPrice: annsol.gasPrice,
                     }, (err, txid) => {
                         if (err) {
@@ -350,13 +351,13 @@ angular.module('annsol', [])
 
             annsol._sendAudit = (isGood) => {
                 annsol.contract.addAudit.estimateGas(annsol.auditNMsgWaiting, isGood, {from: annsol.fromAddr}, (err, gasEstimate) => {
-                    console.log(`gasestimate: ${gasEstimate}, ${Math.round(gasEstimate * 1.1)}`);
+                    console.log(`gasestimate: ${gasEstimate}, ${Math.round(gasEstimate * annsol.gasMultiply)}`);
                     const continueAudit = confirm(`Warning: about to audit result (message okay: ${isGood}) from ${annsol.fromAddr} with gasEstimate: ${gasEstimate}.\n\nDo you want to continue?`);
                     if (!continueAudit)
                         return;
                     annsol.contract.addAudit(annsol.auditNMsgWaiting, isGood, {
                         from: annsol.fromAddr,
-                        gas: Math.round(gasEstimate * 1.1),
+                        gas: Math.round(gasEstimate * annsol.gasMultiply),
                         gasPrice: annsol.gasPrice,
                     }, (err, txid) => {
                         if (err)
@@ -384,7 +385,7 @@ angular.module('annsol', [])
             annsol.calcHeaderHeight = (addABit = false) => {
                 let hh = document.getElementById("header").getBoundingClientRect().height;
                 if (addABit)
-                    hh = Math.round(hh * 1.1);
+                    hh = Math.round(hh * 1.0999);
 
                 console.log(hh)
                 return hh;
