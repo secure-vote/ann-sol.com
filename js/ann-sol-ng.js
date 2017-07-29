@@ -50,10 +50,11 @@ angular.module('annsol', [])
                 }
             }
 
-            annsol.handleError = (err) => {
+            annsol.handleError = (loc) => (err) => {
+                console.warn(`Error at ${loc}`)
                 annsol.error = err;
-                console.warn(err);
                 annsol.log(`Error: ${err}`);
+                console.error(err);
                 annsol.uiPing();
             }
 
@@ -81,7 +82,7 @@ angular.module('annsol', [])
 
                 const cb = (err, addr) => {
                     if (err)
-                        return annsol.handleError(err)
+                        return annsol.handleError('checkEnsDomain')(err)
                     annsol.address = addr;
                     annsol.showResults = true;
                     annsol.showLoading = false;
@@ -115,7 +116,7 @@ angular.module('annsol', [])
             annsol.getOwner = () => {
                 annsol.contract.owner((err, res) => {
                     if (err)
-                        annsol.handleError(err);
+                        annsol.handleError('getOwner')(err);
                     else {
                         annsol.owner = res;
                     }
@@ -139,7 +140,7 @@ angular.module('annsol', [])
                 console.log('getAnns starting');
                 annsol.contract.nMsg((err, res) => {
                     if (err) {
-                        annsol.handleError(err);
+                        annsol.handleError('getAnns')(err);
                         return;
                     }
                     console.log('getAnns done');
@@ -154,7 +155,7 @@ angular.module('annsol', [])
             annsol.updateMsgsWaiting = () => {
                 annsol.contract.nMsgsWaiting((err, res) => {
                     if (err) {
-                        annsol.handleError(err)
+                        annsol.handleError('updateMsgsWaiting.nMsgsWaiting')(err)
                     } else {
                         annsol.nMsgsWaiting = res.c[0];
                         annsol.msgAlarmsMap = {};
@@ -162,7 +163,7 @@ angular.module('annsol', [])
                         for (let i = 0; i < annsol.nMsgsWaiting; i++) {
                             annsol.contract.getMsgWaiting(i, (err, res) => {
                                 if (err)
-                                    return annsol.handleError(err)
+                                    return annsol.handleError('updateMsgsWaiting.getMsgWaiting')(err)
                                 const [{c: [nAudits]}, {c: [nAlarms]}, msg, {c: [timestamp]}, alarmed] = res;
                                 if (timestamp === 0) {  // means this doc has been deleted from msgsWaiting
                                     return;
@@ -209,7 +210,7 @@ angular.module('annsol', [])
                     annsol.rawMsgs = [];
                 annsol.contract.msgMap(n - 1, (err, res) => {
                     if (err)
-                        annsol.handleError(err);
+                        annsol.handleError('getMsgs')(err);
                     else {
                         annsol.rawMsgs.push(res);
                         annsol.genRenderedMsg(n, res);
@@ -268,7 +269,7 @@ angular.module('annsol', [])
 
                 _web3.eth.getAccounts((err, res) => {
                     if (err)
-                        annsol.handleError(err);
+                        annsol.handleError('updateWeb3')(err);
                     else {
                         annsol.accounts = res;
                         console.log('Set accounts:', annsol.accounts)
@@ -332,7 +333,7 @@ angular.module('annsol', [])
                             if (err.toString().includes('todo: some thing about unlocked wallet')) {
 
                             }
-                            annsol.handleError(err);
+                            annsol.handleError('sendNewAnn')(err);
                         } else {
                             annsol.addTx(txid);
                         }
@@ -361,7 +362,7 @@ angular.module('annsol', [])
                         gasPrice: annsol.gasPrice,
                     }, (err, txid) => {
                         if (err)
-                            return annsol.handleError(err)
+                            return annsol.handleError('_sendAudit')(err)
                         annsol.addTx(txid);
 
                     })
@@ -403,9 +404,9 @@ angular.module('annsol', [])
 
             setInterval(() => {
                 if (annsol.initDone) {
-                    _web3.eth.getBlock('lastest', (err, block) => {
+                    _web3.eth.getBlock('latest', (err, block) => {
                         if (err)
-                            return annsol.handleError(err)
+                            return annsol.handleError('getBlock')(err)
                         if (block && annsol.lastBlock !== block.hash) {
                             annsol.lastBlock = block.hash;
                             annsol.update();
@@ -415,7 +416,7 @@ angular.module('annsol', [])
                     [...annsol.awaitingTxs].map(txid => _web3.eth.getTransaction(txid, (err, txr) => {
                         console.log(txid, err, txr);
                         if (err)
-                            return annsol.handleError(err);
+                            return annsol.handleError('getTransaction')(err);
                         if (txr && txr.blockNumber) {
                             annsol.awaitingTxs.delete(txid);
                             annsol.log(`Confirmed ${txid}`);
