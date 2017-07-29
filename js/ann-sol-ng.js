@@ -7,7 +7,7 @@ angular.module('annsol', [])
             $scope.R = R;
 
             annsol.showResults = false;
-            annsol.domain = "0xbf74cC2839b4B639062E37b6Ea53F3ed7964132c";
+            annsol.domain = "ann-sol.eth";
             annsol.fromAddr = '';
             annsol.web3URL = web3URL;
             annsol.ipfsURL = R.clone(ipfsURL);
