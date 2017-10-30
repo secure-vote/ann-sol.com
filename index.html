@@ -23,14 +23,14 @@
 <body ng-controller="AnnSolController as annsol">
 
 <div class="flex flex-column" style="min-height:100vh">
-    <header class="fixed top-0 z3 bg-silver border-bottom" style="height: 4.5rem; width: 100vw" id="header">
+    <header class="fixed top-0 z3 bg-silver border-bottom" style="width: 100vw" id="header">
         <div class="flex flex-justify flex-start flex-stretch">
             <div class="flex">
-                <h2 class="m2">Ann.sol</h2>
+                <h2 class="m2">Ann.sol - Cryptographically Secure Announcements</h2>
             </div>
 
             <div class="ml2 right-align mt2 flex-auto">
-                <div ng-show="showLogs" class="rounded p2 bg-white border overflow-scroll" style="max-height: 30vh;">
+                <div ng-show="showLogs" class="rounded p2 bg-white border overflow-scroll fixed dib" style="max-height: 30vh; left: 15rem">
                     <span ng-show="annsol.logs.length === 0">No logs yet.</span>
 
                     <ul ng-show="annsol.logs.length > 0">
