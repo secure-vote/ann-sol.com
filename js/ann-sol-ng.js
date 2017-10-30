@@ -1,6 +1,6 @@
 __DEV__ = false;
 
-angular.module('annsol', [])
+const app = angular.module('annsol', [])
     .controller('AnnSolController', function ($scope, $location) {
             const annsol = this;
             annsol.annsol = annsol;
@@ -481,3 +481,7 @@ angular.module('annsol', [])
         transclude: true,
         bindToController: true,
     });
+
+app.config(['$locationProvider', function($locationProvider) {
+    $locationProvider.html5Mode(true);
+}]);
