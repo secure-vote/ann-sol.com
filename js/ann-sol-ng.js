@@ -1,7 +1,7 @@
 __DEV__ = false;
 
 angular.module('annsol', [])
-    .controller('AnnSolController', function ($scope) {
+    .controller('AnnSolController', function ($scope, $location) {
             const annsol = this;
             annsol.annsol = annsol;
             $scope.R = R;
@@ -19,6 +19,10 @@ angular.module('annsol', [])
             annsol.gasPrice = 4000000000;
             annsol.lastUpdate = 0;
             annsol.gasMultiply = 1.5;  // testnet RPC seems to require more than 1.1, unsure why.
+
+
+            annsol.searchObj = $location.search();
+
 
             annsol.resetState = () => {
                 annsol.address = "";
@@ -401,6 +405,15 @@ angular.module('annsol', [])
                 annsol.checkEnsDomain();
                 annsol.gasPrice = 40000000000;
             }
+
+            // init code
+            console.log(annsol.searchObj);
+            if (annsol.searchObj.domain) {
+                annsol.domain = annsol.searchObj.domain;
+                annsol.checkEnsDomain();
+                annsol.showDomainSetter = !annsol.showDomainSetter;
+            }
+
 
             setInterval(() => {
                 if (annsol.initDone) {
